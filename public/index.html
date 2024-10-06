@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ChatGPT-like Chatbot</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #000; /* 배경색을 검정으로 설정 */
+            color: white; /* 텍스트 색상을 흰색으로 설정 */
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+
+        .header {
+            padding: 10px 20px;
+            color: #007bff; /* 파란색 텍스트 */
+            font-size: 24px; /* 글자 크기 */
+            font-weight: bold; /* 글자 두께 */
+        }
+
+        .chat-container {
+            flex-grow: 1;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            overflow-y: auto;
+            border: 1px solid #ccc;
+            background-color: #333; /* 채팅창 배경색을 어두운 회색으로 설정 */
+        }
+
+        .message {
+            margin-bottom: 15px;
+            padding: 10px;
+            border-radius: 10px;
+            max-width: 60%;
+            word-wrap: break-word;
+        }
+
+        .user-message {
+            align-self: flex-end;
+            background-color: #007bff;
+            color: white;
+        }
+
+        .bot-message {
+            align-self: flex-start;
+            background-color: #555;
+            color: white;
+        }
+
+        .chat-input-container {
+            display: flex;
+            padding: 10px;
+            background-color: #222; /* 입력창 배경색을 어두운 회색으로 설정 */
+            border-top: 1px solid #ccc;
+            padding-left: 40px; /* 좌측에서 40px 떨어지게 설정 */
+        }
+
+        .chat-input {
+            flex-grow: 1;
+            padding: 10px;
+            font-size: 16px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            background-color: #444; /* 입력창의 배경색을 어두운 회색으로 설정 */
+            color: white; /* 입력창의 텍스트를 흰색으로 설정 */
+            width: calc(100% - 120px); /* 버튼과 여백을 고려하여 너비를 줄임 */
+        }
+
+        .send-btn {
+            padding: 10px 20px;
+            font-size: 16px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            margin-left: 10px;
+            cursor: pointer;
+        }
+
+        .send-btn:hover {
+            background-color: #0056b3;
+        }
+
+        .settings-icon {
+            position: absolute;
+            bottom: 12px; /* 바닥에서 20px 떨어진 위치 */
+            left: 1px; /* 왼쪽에서 20px 떨어진 위치 */
+            font-size: 30px; /* 아이콘 크기 */
+            cursor: pointer; /* 커서가 포인터로 변경 */
+            color: #007bff; /* 파란색으로 설정 */
+        }
+    </style>
+</head>
+<body>
+
+<div class="header">FundAd</div> <!-- 좌측 상단에 "FundAd" 추가 -->
+
+<div class="chat-container" id="chat-container">
+    <!-- 채팅 메시지가 여기에 표시됩니다 -->
+</div>
+
+<div class="chat-input-container">
+    <input type="text" id="chat-input" class="chat-input" placeholder="Ask something..." />
+    <button class="send-btn" onclick="sendMessage()">Send</button>
+</div>
+
+<!-- 톱니바퀴 아이콘 추가 -->
+<div class="settings-icon" onclick="openSettings()">
+    ⚙️
+</div>
+
+<script>
+    const chatContainer = document.getElementById('chat-container');
+    const chatInput = document.getElementById('chat-input');
+
+    // 사용자 메시지와 봇 응답을 화면에 추가하는 함수
+    function addMessage(message, type) {
+        const messageDiv = document.createElement('div');
+        messageDiv.classList.add('message');
+        messageDiv.classList.add(type === 'user' ? 'user-message' : 'bot-message');
+        messageDiv.textContent = message;
+        chatContainer.appendChild(messageDiv);
+        chatContainer.scrollTop = chatContainer.scrollHeight; // 자동 스크롤
+    }
+
+    // 메시지를 서버로 보내고 응답을 받는 함수
+    async function sendMessage() {
+        const userMessage = chatInput.value.trim();
+        if (!userMessage) return;
+
+        // 사용자가 입력한 메시지 화면에 표시
+        addMessage(userMessage, 'user');
+        chatInput.value = '';
+
+        try {
+            // 서버에 POST 요청 보내기
+            const response = await fetch('/chat', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ message: userMessage })
+            });
+            const data = await response.json();
+            // 서버의 응답을 화면에 표시
+            addMessage(data.reply, 'bot');
+        } catch (error) {
+            console.error('Error:', error);
+            addMessage('Something went wrong. Please try again.', 'bot');
+        }
+    }
+
+    // Enter 키로 메시지 전송
+    chatInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+            sendMessage();
+        }
+    });
+
+    // 환경 설정 열기 함수 (임시로 로그만 출력)
+    function openSettings() {
+        console.log('Settings opened'); // 여기에서 환경 설정 창 열기 로직 추가 가능
+    }
+</script>
+
+</body>
+</html>

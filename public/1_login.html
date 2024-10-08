@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #333;
+            color: white;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        .container {
+            display: flex;
+            width: 80%;
+            height: 80vh;
+        }
+
+        .left-side {
+            width: 65%;
+            background-color: #222;
+            padding: 20px;
+            border-radius: 10px 0 0 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .right-side {
+            width: 35%;
+            background-color: #444;
+            padding: 20px;
+            border-radius: 0 10px 10px 0;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .left-side h2, .right-side h2 {
+            text-align: center;
+            color: #007bff;
+        }
+
+        .login-container label {
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        .login-container input[type="text"],
+        .login-container input[type="password"] {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 15px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+
+        .login-container button {
+            width: 100%;
+            padding: 10px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        .login-container button:hover {
+            background-color: #0056b3;
+        }
+
+        /* 구글 로그인 버튼 스타일 */
+        .google-login {
+            width: 100%;
+            padding: 10px;
+            background-color: #4285F4;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+
+        .google-login:hover {
+            background-color: #3367D6;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="left-side">
+        <h2>Welcome Back</h2>
+        <!-- 여기에 추가 콘텐츠가 들어갈 수 있습니다 -->
+    </div>
+    <div class="right-side">
+        <h2>Login</h2>
+        <div class="login-container">
+            <label for="username">Username</label>
+            <input type="text" id="username" placeholder="Enter your username">
+            
+            <label for="password">Password</label>
+            <input type="password" id="password" placeholder="Enter your password">
+            
+            <button id="login-btn" type="button">Login</button>
+        </div>
+    </div>
+</div>
+
+<!-- 자바스크립트 파일 로드 -->
+<script src="/js/login.js"></script>
+
+</body>
+</html>

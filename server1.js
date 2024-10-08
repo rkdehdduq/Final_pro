@@ -1,21 +1,19 @@
 // Express.js 프레임워크 불러옴
 const express = require('express');
-
 // JSON 요청 파싱할 body-parser 미들웨어 불러옴
 const bodyParser = require('body-parser');
-
 // Google Generative AI SDK 불러옴
 const { GoogleGenerativeAI } = require("@google/generative-ai");
-
 // readline 모듈 불러옴. 터미널 입력 처리용
 const readline = require("readline");
-
 // .env 파일에서 환경 변수 불러오기 위한 dotenv 모듈 불러옴
 require('dotenv').config();
+// 경로 처리를 위한 path 모듈
+const path = require('path'); 
+
 
 // Express 애플리케이션 생성
 const app = express();
-
 // 사용할 포트 설정. 환경 변수 PORT가 없으면 기본적으로 3000 사용
 const PORT = process.env.PORT || 3000;
 
@@ -23,8 +21,15 @@ const PORT = process.env.PORT || 3000;
 app.use(bodyParser.json());
 
 // 정적 파일 제공할 미들웨어 설정. 'public' 폴더의 파일 제공
-app.use(express.static('public'));
-
+app.use(express.static(path.join(__dirname, 'public')));
+// 루트 경로로 요청이 왔을 때 login.html 제공
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', '1_login.html'));
+});
+// '/index' 경로로 접속하면 index.html 제공
+app.get('/index', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', '2_index.html'));
+});
 // Google Generative AI 초기화
 const genAI = new GoogleGenerativeAI(process.env.OPENAI_API_KEY); // API 키로 Generative AI 인스턴스 생성
 const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" }); // 사용할 AI 모델 설정

@@ -1,16 +1,38 @@
+// .env 파일에서 환경 변수 불러오기 위한 dotenv 모듈 불러옴
+require('dotenv').config();
+// 필요한 모듈 추가
+const mongoose = require('mongoose'); // MongoDB 연결을 위한 mongoose 모듈 추가
+
+// MongoDB 연결 설정
+mongoose.connect(process.env.MONGODB_URI)
+    .then(() => console.log('MongoDB 연결됨'))
+    .catch(err => console.error('MongoDB 연결 오류', err));
+
+// 사용자 스키마 정의
+const userSchema = new mongoose.Schema({
+    fullname: { type: String, required: true },
+    email: { type: String, required: true, unique: true },
+    username: { type: String, required: true, unique: true },
+    password: { type: String, required: true },
+});
+
+// 사용자 모델 생성
+const User = mongoose.model('User', userSchema);
+
 // Express.js 프레임워크 불러옴
 const express = require('express');
 // JSON 요청 파싱할 body-parser 미들웨어 불러옴
 const bodyParser = require('body-parser');
-// Google Generative AI SDK 불러옴
-const { GoogleGenerativeAI } = require("@google/generative-ai");
+const OpenAI = require("openai"); // OpenAI SDK 불러옴
 // readline 모듈 불러옴. 터미널 입력 처리용
 const readline = require("readline");
-// .env 파일에서 환경 변수 불러오기 위한 dotenv 모듈 불러옴
-require('dotenv').config();
 // 경로 처리를 위한 path 모듈
 const path = require('path'); 
 
+// OpenAI API 초기화
+const openai = new OpenAI({
+    apiKey: process.env.OPENAI_API_KEY,
+});
 
 // Express 애플리케이션 생성
 const app = express();
@@ -30,31 +52,80 @@ app.get('/', (req, res) => {
 app.get('/index', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', '2_index.html'));
 });
-// Google Generative AI 초기화
-const genAI = new GoogleGenerativeAI(process.env.OPENAI_API_KEY); // API 키로 Generative AI 인스턴스 생성
-const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" }); // 사용할 AI 모델 설정
-const chat = model.startChat(); // 채팅 세션 시작
+
+
 
 // 클라이언트로부터 전송된 메시지를 처리하는 POST 경로 설정
 app.post('/send-message', async (req, res) => {
-    const userMessage = req.body.message; // 클라이언트에서 보낸 메시지 추출
+    const userMessage = req.body.message; // 요청 본문에서 사용자 메시지 가져오기
 
-    // 메시지가 비어있는지 확인. 비어있으면 400 오류 응답
     if (!userMessage) {
-        return res.status(400).json({ error: '메시지는 비어 있을 수 없음' });
+        return res.status(400).json({ error: '메시지는 비어 있을 수 없음' }); // 메시지가 비어있을 경우 오류 응답
     }
 
     try {
-        // AI에게 사용자 메시지 전송하고 응답 받음
-        const result = await chat.sendMessage(userMessage);
-        const botReply = result.response.text(); // AI의 응답 텍스트 추출
+        // OpenAI API에 사용자 메시지 전송하고 응답 받음
+        const response = await openai.chat.completions.create({
+            model: "gpt-3.5-turbo", // 또는 "gpt-4" 등 원하는 모델 선택
+            messages: [{ role: "user", content: userMessage }], // 사용자 메시지를 포함한 메시지 배열
+        });
 
-        // 봇의 응답을 클라이언트에 JSON 형식으로 전달
-        res.json({ reply: botReply });
+        const botReply = response.choices[0].message.content; // AI의 응답 텍스트 추출
+        res.json({ reply: botReply }); // 챗봇의 응답을 JSON 형식으로 클라이언트에 전송
     } catch (error) {
-        // API 요청 중 오류 발생 시 콘솔에 에러 출력 및 500 오류 응답
-        console.error('챗 API 요청 중 오류 발생', error);
-        res.status(500).json({ reply: '죄송함. 요청 처리 중 오류 발생' });
+        console.error('챗 API 요청 중 오류 발생', error); // 오류 발생 시 콘솔에 로그 출력
+        res.status(500).json({ reply: '죄송함. 요청 처리 중 오류 발생' }); // 서버 오류 응답
+    }
+});
+
+
+
+// 회원가입 API 추가
+app.post('/api/signup', async (req, res) => {
+    const { fullname, email, username, password } = req.body;
+
+    // 입력값 확인
+    if (!fullname || !email || !username || !password) {
+        return res.status(400).json({ error: '모든 필드를 입력해야 합니다.' });
+    }
+
+    try {
+        // 사용자 정보 저장
+        const newUser = new User({ fullname, email, username, password });
+        await newUser.save();
+        res.status(201).json({ message: '사용자가 성공적으로 생성되었습니다.' });
+    } catch (error) {
+        console.error('사용자 생성 중 오류 발생', error);
+        res.status(500).json({ error: '사용자를 생성하는 동안 오류가 발생했습니다.' });
+    }
+});
+
+// 로그인 API 추가
+app.post('/api/login', async (req, res) => {
+    const { username, password } = req.body;
+
+    // 입력값 확인
+    if (!username || !password) {
+        return res.status(400).json({ error: '사용자 이름과 비밀번호를 입력해야 합니다.' });
+    }
+
+    try {
+        // 사용자 조회
+        const user = await User.findOne({ username });
+        if (!user) {
+            return res.status(401).json({ error: '사용자 이름 또는 비밀번호가 잘못되었습니다.' });
+        }
+
+        // 비밀번호 확인 (비밀번호 암호화 사용 시 적절한 비교 방법 필요)
+        if (user.password !== password) {
+            return res.status(401).json({ error: '사용자 이름 또는 비밀번호가 잘못되었습니다.' });
+        }
+
+        // 로그인 성공
+        res.json({ message: '로그인 성공' });
+    } catch (error) {
+        console.error('로그인 중 오류 발생', error);
+        res.status(500).json({ error: '로그인 처리 중 오류가 발생했습니다.' });
     }
 });
 
@@ -66,7 +137,7 @@ app.listen(PORT, (err) => {
         process.exit(1);
     }
     // 서버가 정상적으로 실행 중일 때 콘솔에 메시지 출력
-    console.log(`서버가 http://localhost:${PORT}에서 실행 중임`);
+    console.log(`서버가 http://localhost:${PORT} 에서 실행 중임`);
 });
 
 // 터미널에서 수동으로 입력 받기 위한 readline 인터페이스 설정
@@ -75,26 +146,17 @@ const rl = readline.createInterface({
     output: process.stdout // 표준 출력 사용
 });
 
-// 사용자 입력 처리하는 함수
-async function run(line = '') {
-    // 입력된 줄을 AI에게 전송하고 응답 받음
-    const result = await chat.sendMessage(line);
-    const response = result.response; // AI의 응답 가져옴
-    const text = response.text(); // 응답 텍스트 추출
-    // AI의 응답을 터미널에 출력
-    process.stdout.write('GEMINI : ' + text + '\n');
-}
 
-// 터미널 입력 처리하는 이벤트 리스너
-rl.on("line", async function(line) {
-    // 입력된 줄이 비어있으면 readline 인터페이스 종료
-    if (!line) {
-        rl.close();
-        return;
-    }
-    // 입력된 줄 처리
-    run(line);
-}).on("close", function() {
-    // readline 인터페이스 종료 시 프로세스 종료
-    process.exit();
-});
+// // 터미널 입력 처리하는 이벤트 리스너
+// rl.on("line", async function(line) {
+//     // 입력된 줄이 비어있으면 readline 인터페이스 종료
+//     if (!line) {
+//         rl.close();
+//         return;
+//     }
+//     // 입력된 줄 처리
+//     await run(line);
+// }).on("close", function() {
+//     // readline 인터페이스 종료 시 프로세스 종료
+//     process.exit();
+// });

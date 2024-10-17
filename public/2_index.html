@@ -272,45 +272,47 @@
 
 <script>
     //메세지 주고 받기
-    async function sendMessage() {
-        const inputField = document.getElementById('chat-input');
-        const message = inputField.value;
-        if (!message) return;
+async function sendMessage() {
+    const inputField = document.getElementById('chat-input'); // 입력 필드 가져오기
+    const message = inputField.value; // 입력된 메시지 가져오기
+    if (!message) return; // 메시지가 비어있다면 함수 종료
 
-        appendMessage('user-message', message);
-        inputField.value = '';
+    appendMessage('user-message', message); // 사용자 메시지 추가
+    inputField.value = ''; // 입력 필드 초기화
 
-        try {
-            const response = await fetch('/send-message', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ message }),
-            });
-            const data = await response.json();
-            appendMessage('bot-message', data.reply);
-        } catch (error) {
-            console.error('Error:', error);
-            appendMessage('bot-message', 'Something went wrong.');
-        }
+    try {
+        const response = await fetch('/send-message', { // 메시지를 서버로 전송
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ message }), // 메시지를 JSON 형식으로 변환
+        });
+        const data = await response.json(); // 응답을 JSON 형식으로 변환
+        appendMessage('bot-message', data.reply); // 챗봇의 응답 메시지 추가
+    } catch (error) {
+        console.error('Error:', error); // 오류 발생 시 콘솔에 로그 출력
+        appendMessage('bot-message', 'Something went wrong.'); // 오류 메시지 추가
     }
+}
 
-    function appendMessage(type, message) {
-        const chatContainer = document.getElementById('chat-container');
-        const messageElement = document.createElement('div');
-        messageElement.classList.add('message', type);
-        messageElement.textContent = message;
-        chatContainer.appendChild(messageElement);
-        chatContainer.scrollTop = chatContainer.scrollHeight; 
+function appendMessage(type, message) {
+    const chatContainer = document.getElementById('chat-container'); // 채팅 컨테이너 가져오기
+    const messageElement = document.createElement('div'); // 새로운 메시지 요소 생성
+    messageElement.classList.add('message', type); // 메시지 요소에 클래스 추가
+    messageElement.textContent = message; // 메시지 텍스트 설정
+    chatContainer.appendChild(messageElement); // 채팅 컨테이너에 메시지 추가
+    chatContainer.scrollTop = chatContainer.scrollHeight; // 스크롤을 가장 아래로 이동
+}
+
+// 엔터 키 입력 시 메시지 전송 함수 호출
+document.getElementById('chat-input').addEventListener('keypress', function (event) {
+    if (event.key === 'Enter') { // 엔터 키가 눌렸다면
+        event.preventDefault(); // 기본 동작 방지
+        sendMessage(); // 메시지 전송 함수 호출
     }
+});
 
-    document.getElementById('chat-input').addEventListener('keypress', function (event) {
-        if (event.key === 'Enter') {
-            event.preventDefault();
-            sendMessage();
-        }
-    });
 
 //자바스크립트함수들
     function openSidebar() {
